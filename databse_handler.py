@@ -10,16 +10,7 @@ class DatabaseHandler:
         self.cursor = self.connection.cursor()
 
     def initialize_db_by_df(self, table_name: str, df: pd.DataFrame) -> None:
-        self.create_table_from_df(table_name, df)
-
-    def create_sql_schema_from_df(self, df: pd.DataFrame) -> str:
-        schema = ", ".join([f"{col} TEXT" for col in df.columns])
-        return schema
-
-    def create_table_from_df(self, table_name: str, df: pd.DataFrame) -> None:
-        schema = self.create_sql_schema_from_df(df)
-        self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} ({schema})")
-        self.connection.commit()
+        self.__create_table_from_df(table_name, df)
 
     def insert_df_into_db(self, table_name: str, df: pd.DataFrame) -> None:
         df.to_sql(table_name, self.connection, if_exists="replace", index=False)
@@ -30,3 +21,12 @@ class DatabaseHandler:
 
     def close(self):
         self.connection.close()
+
+    def __create_sql_schema_from_df(self, df: pd.DataFrame) -> str:
+        schema = ", ".join([f"{col} TEXT" for col in df.columns])
+        return schema
+
+    def __create_table_from_df(self, table_name: str, df: pd.DataFrame) -> None:
+        schema = self.__create_sql_schema_from_df(df)
+        self.cursor.execute(f"CREATE TABLE IF NOT EXISTS {table_name} ({schema})")
+        self.connection.commit()

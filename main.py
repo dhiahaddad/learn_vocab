@@ -33,53 +33,53 @@ class Word:
 
 
 class Main:
-    current_word: Word
+    __current_word: Word
 
     def __init__(self, config: Config) -> None:
-        self.config = config
-        self.db = DatabaseHandler(config.db_name)
-        self.app = QApplication(sys.argv)
-        self.main_window = MainWindow()
+        self.__config = config
+        self.__db = DatabaseHandler(config.db_name)
+        self.__app = QApplication(sys.argv)
+        self.__main_window = MainWindow()
 
     def run(self) -> None:
-        self.main_window.show()
+        self.__main_window.show()
 
-        self.main_window.resetButtonClicked.connect(self.reset_to_default)
-        self.main_window.submitButtonClicked.connect(self.on_submitted)
+        self.__main_window.resetButtonClicked.connect(self.__reset_to_default)
+        self.__main_window.submitButtonClicked.connect(self.__on_submitted)
 
-        self.load_new_word()
+        self.__load_new_word()
 
         try:
-            sys.exit(self.app.exec_())
+            sys.exit(self.__app.exec_())
         finally:
-            self.cleanup()
+            self.__cleanup()
 
-    def load_new_word(self) -> None:
-        self.current_word = Word.from_tuple(
-            self.db.get_random_row(self.config.table_name)
+    def __load_new_word(self) -> None:
+        self.__current_word = Word.from_tuple(
+            self.__db.get_random_row(self.__config.table_name)
         )
-        self.main_window.set_original_word(self.current_word.deutsch)
+        self.__main_window.set_original_word(self.__current_word.deutsch)
 
-    def reset_to_default(self) -> None:
+    def __reset_to_default(self) -> None:
         reader = CsvReader()
         data = reader.read_from_file(config.test_path)
-        self.db.initialize_db_by_df(config.table_name, data)
-        self.db.insert_df_into_db(config.table_name, data)
+        self.__db.initialize_db_by_df(config.table_name, data)
+        self.__db.insert_df_into_db(config.table_name, data)
 
-    def on_submitted(self, input_text: str) -> None:
-        self.main_window.set_translated_word(self.current_word.english)
-        result = self.check_answer(input_text)
-        self.main_window.set_submitted_word(input_text, result)
-        self.load_new_word()
+    def __on_submitted(self, input_text: str) -> None:
+        self.__main_window.set_translated_word(self.__current_word.english)
+        result = self.__check_answer(input_text)
+        self.__main_window.set_submitted_word(input_text, result)
+        self.__load_new_word()
 
-    def check_answer(self, input_text: str) -> bool:
-        if input_text == self.current_word.english:
+    def __check_answer(self, input_text: str) -> bool:
+        if input_text == self.__current_word.english:
             return True
         else:
             return False
 
-    def cleanup(self) -> None:
-        self.db.close()
+    def __cleanup(self) -> None:
+        self.__db.close()
 
 
 config = Config(
