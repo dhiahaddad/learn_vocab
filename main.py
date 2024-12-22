@@ -45,12 +45,16 @@ class Main:
 
         self.__db = DatabaseHandler(config.db_name)
         self.__app = QApplication(sys.argv)
+        self.__words_number = 20
         self.__main_window = MainWindow()
+        self.__main_window.set_words_number(self.__words_number)
 
         if not self.__db.table_exists(config.table_name):
             self.__reset_to_default()
-        elif self.__db.get_random_row(self.__config.table_name) is None:
+        elif self.__db.get_random_row(self.__config.table_name, 1) is None:
             self.__reset_to_default()
+        
+        self.__db.update_rows_number(self.__config.table_name)
 
     def run(self) -> None:
         self.__main_window.show()
@@ -66,7 +70,7 @@ class Main:
             self.__cleanup()
 
     def __load_new_word(self) -> None:
-        random_word = self.__db.get_random_row(self.__config.table_name)
+        random_word = self.__db.get_random_row(self.__config.table_name, self.__words_number)
         self.__current_word = Word.from_tuple(random_word)
         self.__main_window.set_original_word(self.__current_word.deutsch)
 
@@ -76,7 +80,8 @@ class Main:
         self.__db.initialize_db_by_df(config.table_name, data)
         self.__db.insert_df_into_db(config.table_name, data)
 
-    def __on_submitted(self, input_text: str) -> None:
+    def __on_submitted(self, input_text: str, words_number: int) -> None:
+        self.__words_number = words_number
         self.__main_window.set_translated_word(self.__current_word.english)
         result = self.__check_answer(input_text)
         self.__main_window.set_submitted_word(input_text, result)

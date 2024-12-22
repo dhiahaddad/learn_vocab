@@ -10,7 +10,7 @@ from gui_widgets import InOutField, PushButton
 
 class MainWindow(QWidget):
     resetButtonClicked = pyqtSignal()
-    submitButtonClicked = pyqtSignal(str)
+    submitButtonClicked = pyqtSignal(str,int)
 
     def __init__(self) -> None:
         super().__init__()
@@ -34,6 +34,11 @@ class MainWindow(QWidget):
         )
         self.__input_field.returnPressed.connect(self.__submit_input)
         self.__layout.addWidget(self.__input_field)
+
+        self.__words_number = InOutField(
+            "Number of words", font, element_height, parent=self
+        )
+        self.__layout.addWidget(self.__words_number)
 
         self.__submitted_word = InOutField(
             "Submitted word", font, element_height, readonly=True, parent=self
@@ -68,10 +73,14 @@ class MainWindow(QWidget):
         else:
             self.__submitted_word.setStyleSheet("background-color: tomato")
 
+    def set_words_number(self, number: int) -> None:
+        self.__words_number.setText(str(number))
+
     def __submit_input(self) -> None:
         input_text = self.__input_field.text()
+        words_number = int(self.__words_number.text())
         self.__submitted_word.setText(input_text)
-        self.submitButtonClicked.emit(input_text)
+        self.submitButtonClicked.emit(input_text, words_number)
         self.__input_field.clear()
 
     def __reset_button_clicked(self) -> None:
