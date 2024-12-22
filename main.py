@@ -1,4 +1,5 @@
 import sys
+import os
 
 from dataclasses import dataclass
 from typing import Tuple
@@ -20,6 +21,7 @@ class Config:
 
 @dataclass
 class Word:
+    id: str
     level: str
     article: str
     deutsch: str
@@ -28,7 +30,7 @@ class Word:
     sample_phrase: str
 
     @classmethod
-    def from_tuple(cls, word: Tuple[str, str, str, str, str, str]):
+    def from_tuple(cls, word: Tuple[str, str, str, str, str, str, str]):
         return cls(*word)
 
 
@@ -37,9 +39,18 @@ class Main:
 
     def __init__(self, config: Config) -> None:
         self.__config = config
+
+        # if os.path.exists(config.db_name):
+        #     os.remove(config.db_name)
+
         self.__db = DatabaseHandler(config.db_name)
         self.__app = QApplication(sys.argv)
         self.__main_window = MainWindow()
+
+        if not self.__db.table_exists(config.table_name):
+            self.__reset_to_default()
+        elif self.__db.get_random_row(self.__config.table_name) is None:
+            self.__reset_to_default()
 
     def run(self) -> None:
         self.__main_window.show()
@@ -55,9 +66,8 @@ class Main:
             self.__cleanup()
 
     def __load_new_word(self) -> None:
-        self.__current_word = Word.from_tuple(
-            self.__db.get_random_row(self.__config.table_name)
-        )
+        random_word = self.__db.get_random_row(self.__config.table_name)
+        self.__current_word = Word.from_tuple(random_word)
         self.__main_window.set_original_word(self.__current_word.deutsch)
 
     def __reset_to_default(self) -> None:
@@ -70,6 +80,7 @@ class Main:
         self.__main_window.set_translated_word(self.__current_word.english)
         result = self.__check_answer(input_text)
         self.__main_window.set_submitted_word(input_text, result)
+        self.__db.update_progress(self.__config.table_name, self.__current_word.id, result, result)
         self.__load_new_word()
 
     def __check_answer(self, input_text: str) -> bool:
