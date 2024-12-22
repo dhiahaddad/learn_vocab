@@ -2,16 +2,14 @@ import numpy as np
 import pandas as pd
 import sqlite3
 
-from typing import Tuple
+from typing import List, Tuple
 
 
 class DatabaseHandler:
-    __rows_number: int
 
     def __init__(self, db_name: str) -> None:
         self.__connection = sqlite3.connect(db_name)
         self.__cursor = self.__connection.cursor()
-        self.__rows_number = 0
 
     def initialize_db_by_df(self, table_name: str, df: pd.DataFrame) -> None:
         self.__create_table_from_df(table_name, df)
@@ -25,20 +23,24 @@ class DatabaseHandler:
             )
             self.__cursor.execute(
                 f"INSERT INTO {table_name}_progress VALUES (?, ?, ?, ?, ?, ?)",
-                (int(row[0]), None, 0, 0, 0, 0),
+                (int(row[0]), 0, 0, 0, 0, 0),
             )
         self.__connection.commit()
 
     def get_random_row(self, table_name: str, words_number: int) -> Tuple:
-        max_id = min(self.__rows_number, words_number)        
-        random_id = np.random.randint(0, max_id) if max_id > 0 else 0
-        query = f"SELECT * FROM {table_name} WHERE id = ?"
-        self.__cursor.execute(query, (random_id,))
+        MAX_LVL = 5
+        query = (
+            f"SELECT * FROM {table_name} vocab "
+            f"INNER JOIN {table_name}_progress prog ON vocab.id = prog.id "
+            "WHERE vocab.id IN "
+            f"(SELECT id FROM de_en_vocabulary_progress WHERE learned_lvl < {MAX_LVL} LIMIT {words_number}) "
+            "ORDER BY RANDOM() LIMIT 1"
+        )
+        self.__cursor.execute(query)
         return self.__cursor.fetchone()
 
     def update_rows_number(self, table_name: str) -> None:
         self.__cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-        self.__rows_number = self.__cursor.fetchone()[0]
 
     def table_exists(self, table_name: str) -> bool:
         self.__cursor.execute(
@@ -47,9 +49,18 @@ class DatabaseHandler:
         )
         return self.__cursor.fetchone() is not None
 
-    def get_table_schema(self, table_name: str) -> str:
+    def get_table_schema(self, table_name: str) -> List[str]:
         self.__cursor.execute(f"PRAGMA table_info({table_name})")
         return self.__cursor.fetchall()
+
+    def set_learned_lvl(self, table_name: str, id: int, lvl: int) -> None:
+        self.__cursor.execute(
+            f"UPDATE {table_name}_progress " "SET learned_lvl = ? WHERE id = ?",
+            (
+                lvl,
+                id,
+            ),
+        )
 
     def update_progress(
         self, table_name: str, id: int, correct_translation: bool, correct_article: bool
@@ -102,7 +113,7 @@ class DatabaseHandler:
         self.__cursor.execute(f"DROP TABLE IF EXISTS {table_name}_progress")
         schema = """
             id INTEGER PRIMARY KEY,
-            learning_lvl TEXT,
+            learned_lvl TEXT,
             correct_translations INTEGER,
             correct_articles INTEGER,
             incorrect_translations INTEGER,

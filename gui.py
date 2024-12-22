@@ -11,6 +11,7 @@ from gui_widgets import InOutField, PushButton
 class MainWindow(QWidget):
     resetButtonClicked = pyqtSignal()
     submitButtonClicked = pyqtSignal(str,int)
+    neverReaskButtonClicked = pyqtSignal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -50,6 +51,10 @@ class MainWindow(QWidget):
         )
         self.__layout.addWidget(self.__translated_word)
 
+        self.__never_reask_button = PushButton("I learned this word. Don't ask again", font, element_height, parent=self)
+        self.__never_reask_button.clicked.connect(self.__never_reask)
+        self.__layout.addWidget(self.__never_reask_button)
+
         self.__submit_button = PushButton("Submit", font, element_height, parent=self)
         self.__submit_button.clicked.connect(self.__submit_input)
         self.__layout.addWidget(self.__submit_button)
@@ -81,6 +86,10 @@ class MainWindow(QWidget):
         words_number = int(self.__words_number.text())
         self.__submitted_word.setText(input_text)
         self.submitButtonClicked.emit(input_text, words_number)
+        self.__input_field.clear()
+
+    def __never_reask(self) -> None:
+        self.neverReaskButtonClicked.emit()
         self.__input_field.clear()
 
     def __reset_button_clicked(self) -> None:

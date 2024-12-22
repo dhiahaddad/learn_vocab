@@ -13,8 +13,8 @@ class InOutField(QLineEdit):
         placeholder: str,
         font: QFont,
         height: int,
+        parent: QWidget,
         readonly: bool = False,
-        parent: QWidget = None,
     ):
         super().__init__(parent)
         self.setPlaceholderText(placeholder)
@@ -30,8 +30,8 @@ class PushButton(QPushButton):
         text: str,
         font: QFont,
         height: int,
+        parent: QWidget,
         bg_color: str = "lightgrey",
-        parent: QWidget = None,
     ):
         super().__init__(text, parent)
         font.setBold(True)
