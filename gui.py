@@ -1,3 +1,4 @@
+from typing import List
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
@@ -6,7 +7,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
-from gui_widgets import GroupBox, PushButton, InputField, OutputField
+from gui_widgets import GroupBox, PushButton, InputField, OutputField, Statistics
 
 
 class MainWindow(QWidget):
@@ -18,9 +19,13 @@ class MainWindow(QWidget):
         super().__init__()
 
         self.setWindowTitle("Vocabulary Learner")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1000, 600)
 
-        self.__layout = QVBoxLayout()
+        main_layout = QHBoxLayout()
+        left_layout = QVBoxLayout()
+        right_layout = QVBoxLayout()
+        main_layout.addLayout(left_layout, 3)
+        main_layout.addLayout(right_layout, 1)
 
         test_widget = GroupBox(self)
         response_widget = GroupBox(self)
@@ -28,55 +33,61 @@ class MainWindow(QWidget):
         topHBoxLayout = QHBoxLayout()
         topHBoxLayout.addWidget(test_widget, 1)
         topHBoxLayout.addWidget(response_widget, 1)
-        self.__layout.addLayout(topHBoxLayout)
+        left_layout.addLayout(topHBoxLayout)
 
         element_height = int(self.height() * 0.2)
         font_size = int(element_height * 0.1)
-        font = QFont("Sanserif", font_size)
+        label_font = QFont("Sanserif", font_size)
+        button_font = QFont("Sanserif", font_size)
+        button_font.setBold(True)
+        button_font.setFamily("Arial")
 
         self.__original_word = OutputField(
-            "Original word", font, element_height, parent=self
+            "Original word", label_font, element_height, parent=self
         )
         test_widget.addWidget(self.__original_word)
 
         self.__input_field = InputField(
-            "Enter your text here", font, element_height, parent=self
+            "Enter your text here", label_font, element_height, parent=self
         )
         self.__input_field.input_field.returnPressed.connect(self.__submit_input)
         test_widget.addWidget(self.__input_field)
 
         self.__words_number = InputField(
-            "Number of words to be randomized", font, element_height, parent=self
+            "Number of words to be randomized", label_font, element_height, parent=self
         )
-        self.__layout.addWidget(self.__words_number)
+        left_layout.addWidget(self.__words_number)
 
         self.__submitted_word = OutputField(
-            "Submitted word", font, element_height, parent=self
+            "Submitted word", label_font, element_height, parent=self
         )
         response_widget.addWidget(self.__submitted_word)
 
         self.__translated_word = OutputField(
-            "Translated word", font, element_height, parent=self
+            "Translated word", label_font, element_height, parent=self
         )
         response_widget.addWidget(self.__translated_word)
 
         self.__never_reask_button = PushButton(
-            "I learned this word. Don't ask again", font, element_height, parent=self
+            "I learned this word. Don't ask again", button_font, element_height, parent=self
         )
         self.__never_reask_button.clicked.connect(self.__never_reask)
         response_widget.addWidget(self.__never_reask_button)
 
-        self.__submit_button = PushButton("Submit", font, element_height, parent=self)
+        self.__submit_button = PushButton("Submit", button_font, element_height, parent=self)
         self.__submit_button.clicked.connect(self.__submit_input)
         test_widget.addWidget(self.__submit_button)
 
         self.__reset_button = PushButton(
-            "Reset to default", font, element_height, parent=self
+            "Reset to default", button_font, element_height, parent=self
         )
         self.__reset_button.clicked.connect(self.__reset_button_clicked)
-        self.__layout.addWidget(self.__reset_button)
+        left_layout.addWidget(self.__reset_button)
 
-        self.setLayout(self.__layout)
+        self.__statistics = Statistics(label_font, element_height, self)
+        right_layout.addWidget(self.__statistics)
+
+        self.setLayout(main_layout)
 
     def set_original_word(self, word: str) -> None:
         self.__original_word.setText(word)
@@ -93,6 +104,12 @@ class MainWindow(QWidget):
 
     def set_words_number(self, number: int) -> None:
         self.__words_number.setText(str(number))
+    
+    def set_statistics(self, words_in_db: int, studied_words: int, current_word_lvl: int, words_in_lvl: List[int]) -> None:
+        self.__statistics.set_words_in_db(words_in_db)
+        self.__statistics.set_studied_words(studied_words)
+        self.__statistics.set_current_word_lvl(current_word_lvl)
+        self.__statistics.set_words_in_lvl(words_in_lvl)
 
     def __submit_input(self) -> None:
         input_text = self.__input_field.text()

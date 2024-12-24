@@ -38,6 +38,24 @@ class DatabaseHandler:
         )
         self.__cursor.execute(query)
         return self.__cursor.fetchone()
+    
+    def get_number_of_rows_in_table(self, table_name: str) -> int:
+        self.__cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+        return self.__cursor.fetchone()[0]
+    
+    def get_number_of_studied_words(self, table_name: str) -> int:
+        self.__cursor.execute(
+            f"SELECT COUNT(*) FROM {table_name}_progress "
+            "WHERE learned_lvl IS NOT NULL"
+            )
+        return self.__cursor.fetchone()[0]
+    
+    def get_number_of_words_in_lvl(self, table_name: str, lvl: int) -> int:
+        self.__cursor.execute(
+            f"SELECT COUNT(*) FROM {table_name}_progress "
+            f"WHERE learned_lvl = {lvl}"
+            )
+        return self.__cursor.fetchone()[0]
 
     def update_rows_number(self, table_name: str) -> None:
         self.__cursor.execute(f"SELECT COUNT(*) FROM {table_name}")

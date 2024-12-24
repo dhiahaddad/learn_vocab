@@ -9,6 +9,8 @@ from csv_reader import CsvReader
 from databse_handler import DatabaseHandler
 from gui import MainWindow
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 
 @dataclass
 class Config:
@@ -36,7 +38,10 @@ class Word:
     incorrect_articles: str
 
     @classmethod
-    def from_tuple(cls, word: Tuple[str, str, str, str, str, str, str, str, str, str, str, str, str]):
+    def from_tuple(
+        cls,
+        word: Tuple[str, str, str, str, str, str, str, str, str, str, str, str, str],
+    ):
         return cls(*word)
 
 
@@ -82,10 +87,11 @@ class Main:
         )
         self.__current_word = Word.from_tuple(random_word)
         self.__main_window.set_original_word(self.__current_word.deutsch)
+        self.update_statistics()
 
     def __reset_to_default(self) -> None:
         reader = CsvReader()
-        data = reader.read_from_file(config.test_path)
+        data = reader.read_from_file(config.spreadsheet_url)
         self.__db.initialize_db_by_df(config.table_name, data)
         self.__db.insert_df_into_db(config.table_name, data)
 
@@ -112,6 +118,18 @@ class Main:
             return True
         else:
             return False
+        
+    def update_statistics(self) -> None:
+        words_in_db = self.__db.get_number_of_rows_in_table(self.__config.table_name)
+        studied_words = self.__db.get_number_of_studied_words(self.__config.table_name)
+        current_word_lvl = self.__current_word.learned_lvl
+        words_in_lvl = []
+        for i in range(1, MAX_LVL + 1):
+            words_in_lvl.append(self.__db.get_number_of_words_in_lvl(self.__config.table_name, i))
+        
+        self.__main_window.set_statistics(
+            words_in_db, studied_words, current_word_lvl, words_in_lvl
+        )
 
     def __cleanup(self) -> None:
         self.__db.close()
