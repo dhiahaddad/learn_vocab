@@ -11,7 +11,8 @@ from gui_widgets import GroupBox, PushButton, InputField, OutputField, Statistic
 
 
 class MainWindow(QWidget):
-    resetButtonClicked = pyqtSignal()
+    resetDictButtonClicked = pyqtSignal()
+    resetProgressButtonClicked = pyqtSignal()
     submitButtonClicked = pyqtSignal(str, int)
     neverReaskButtonClicked = pyqtSignal()
 
@@ -78,11 +79,20 @@ class MainWindow(QWidget):
         self.__submit_button.clicked.connect(self.__submit_input)
         test_widget.addWidget(self.__submit_button)
 
-        self.__reset_button = PushButton(
-            "Reset to default", button_font, element_height, parent=self
+        reset_layout = QHBoxLayout()
+        left_layout.addLayout(reset_layout)
+
+        self.__reset_dict_button = PushButton(
+            "Reload dictionary", button_font, element_height, parent=self
         )
-        self.__reset_button.clicked.connect(self.__reset_button_clicked)
-        left_layout.addWidget(self.__reset_button)
+        self.__reset_dict_button.clicked.connect(self.__reset_dict_button_clicked)
+        reset_layout.addWidget(self.__reset_dict_button)
+
+        self.__reset_progress_button = PushButton(
+            "Reset progress", button_font, element_height, parent=self
+        )
+        self.__reset_progress_button.clicked.connect(self.__reset_progress_button_clicked)
+        reset_layout.addWidget(self.__reset_progress_button)
 
         self.__statistics = Statistics(label_font, element_height, self)
         right_layout.addWidget(self.__statistics)
@@ -122,5 +132,8 @@ class MainWindow(QWidget):
         self.neverReaskButtonClicked.emit()
         self.__input_field.input_field.clear()
 
-    def __reset_button_clicked(self) -> None:
-        self.resetButtonClicked.emit()
+    def __reset_dict_button_clicked(self) -> None:
+        self.resetDictButtonClicked.emit()
+
+    def __reset_progress_button_clicked(self) -> None:
+        self.resetProgressButtonClicked.emit()

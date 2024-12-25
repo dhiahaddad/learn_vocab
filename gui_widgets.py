@@ -151,6 +151,9 @@ class Statistics(QWidget):
         self._current_word_lvl = StatisticsField("Current word's learning lvl", font, height, self)
         self._layout.addWidget(self._current_word_lvl)
 
+        self._lvl_0_words = StatisticsField("Words in learning lvl 0", font, height, self)
+        self._layout.addWidget(self._lvl_0_words)
+
         self._lvl_1_words = StatisticsField("Words in learning lvl 1", font, height, self)
         self._layout.addWidget(self._lvl_1_words)
 
@@ -176,8 +179,9 @@ class Statistics(QWidget):
         self._current_word_lvl.setText(str(current_word_lvl))
     
     def set_words_in_lvl(self, words_in_lvl: list) -> None:
-        self._lvl_1_words.setText(str(words_in_lvl[0]))
-        self._lvl_2_words.setText(str(words_in_lvl[1]))
-        self._lvl_3_words.setText(str(words_in_lvl[2]))
-        self._lvl_4_words.setText(str(words_in_lvl[3]))
-        self._lvl_5_words.setText(str(words_in_lvl[4]))
+        self._lvl_0_words.setText(str(words_in_lvl[0]))
+        self._lvl_1_words.setText(str(words_in_lvl[1]))
+        self._lvl_2_words.setText(str(words_in_lvl[2]))
+        self._lvl_3_words.setText(str(words_in_lvl[3]))
+        self._lvl_4_words.setText(str(words_in_lvl[4]))
+        self._lvl_5_words.setText(str(words_in_lvl[5]))

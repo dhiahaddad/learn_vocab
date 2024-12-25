@@ -2,12 +2,12 @@ import sys
 import os
 
 from dataclasses import dataclass
-from typing import Tuple
 from PyQt5.QtWidgets import QApplication
 
 from csv_reader import CsvReader
 from databse_handler import DatabaseHandler
 from gui import MainWindow
+from word import MAX_LVL, Word
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -19,30 +19,6 @@ class Config:
     test_path: str
     table_name: str
     db_name: str
-
-
-@dataclass
-class Word:
-    id: str
-    level: str
-    article: str
-    deutsch: str
-    plural: str
-    english: str
-    sample_phrase: str
-    id2: str
-    learned_lvl: str
-    correct_translations: str
-    correct_articles: str
-    incorrect_translations: str
-    incorrect_articles: str
-
-    @classmethod
-    def from_tuple(
-        cls,
-        word: Tuple[str, str, str, str, str, str, str, str, str, str, str, str, str],
-    ):
-        return cls(*word)
 
 
 class Main:
@@ -70,7 +46,8 @@ class Main:
     def run(self) -> None:
         self.__main_window.show()
 
-        self.__main_window.resetButtonClicked.connect(self.__reset_to_default)
+        self.__main_window.resetDictButtonClicked.connect(self.__reset_to_default)
+        self.__main_window.resetProgressButtonClicked.connect(self.__reset_progress)
         self.__main_window.submitButtonClicked.connect(self.__on_submitted)
         self.__main_window.neverReaskButtonClicked.connect(self.__on_never_reask)
 
@@ -94,6 +71,11 @@ class Main:
         data = reader.read_from_file(config.spreadsheet_url)
         self.__db.initialize_db_by_df(config.table_name, data)
         self.__db.insert_df_into_db(config.table_name, data)
+        self.__load_new_word()
+
+    def __reset_progress(self) -> None:
+        self.__db.reset_progress(self.__config.table_name)
+        self.update_statistics()
 
     def __on_submitted(self, input_text: str, words_number: int) -> None:
         self.__words_number = words_number
@@ -102,6 +84,9 @@ class Main:
         self.__main_window.set_submitted_word(input_text, result)
         self.__db.update_progress(
             self.__config.table_name, int(self.__current_word.id), result, result
+        )
+        self.__db.update_learning_lvl(
+            self.__config.table_name, self.__current_word, result
         )
         self.__load_new_word()
 
@@ -114,19 +99,21 @@ class Main:
         self.__load_new_word()
 
     def __check_answer(self, input_text: str) -> bool:
-        if input_text == self.__current_word.english:
+        if input_text.lower() == self.__current_word.english.lower():
             return True
         else:
             return False
-        
+
     def update_statistics(self) -> None:
         words_in_db = self.__db.get_number_of_rows_in_table(self.__config.table_name)
         studied_words = self.__db.get_number_of_studied_words(self.__config.table_name)
         current_word_lvl = self.__current_word.learned_lvl
         words_in_lvl = []
-        for i in range(1, MAX_LVL + 1):
-            words_in_lvl.append(self.__db.get_number_of_words_in_lvl(self.__config.table_name, i))
-        
+        for i in range(MAX_LVL + 1):
+            words_in_lvl.append(
+                self.__db.get_number_of_words_in_lvl(self.__config.table_name, i)
+            )
+
         self.__main_window.set_statistics(
             words_in_db, studied_words, current_word_lvl, words_in_lvl
         )
@@ -134,7 +121,6 @@ class Main:
     def __cleanup(self) -> None:
         self.__db.close()
 
-MAX_LVL = 5
 
 config = Config(
     spreadsheet_url="https://docs.google.com/spreadsheets/d/e/2PACX-1vRW9I6TdJPrc-ow1rdZO_p3_ApEK-W47aA9IwIipDNxFITxX4KaJUx5KG79MIK-XxkDHoIQNuOt5ybq/pub?gid=0&single=true&output=csv",
