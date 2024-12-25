@@ -124,7 +124,6 @@ class DatabaseHandler:
         correct = int(word.correct_translations) + int(word.correct_articles) + 2 * int(result)
         incorrect = int(word.incorrect_translations) + int(word.incorrect_articles) + 2 * int(not result)
         lvl = int(MAX_LVL * correct / (correct + incorrect))
-        print(lvl)
         self.__cursor.execute(
             f"UPDATE {table_name}_progress " "SET learned_lvl = ? WHERE id = ?",
             (

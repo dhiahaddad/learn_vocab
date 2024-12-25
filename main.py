@@ -63,7 +63,7 @@ class Main:
             self.__config.table_name, self.__words_number
         )
         self.__current_word = Word.from_tuple(random_word)
-        self.__main_window.set_original_word(self.__current_word.deutsch)
+        self.__main_window.set_original_word(self.__current_word.english)
         self.update_statistics()
 
     def __reset_to_default(self) -> None:
@@ -79,7 +79,13 @@ class Main:
 
     def __on_submitted(self, input_text: str, words_number: int) -> None:
         self.__words_number = words_number
-        self.__main_window.set_translated_word(self.__current_word.english)
+        if self.__current_word.article is not None:
+            translated_word = self.__current_word.article + " " + self.__current_word.deutsch
+        else:
+            translated_word = self.__current_word.deutsch
+        self.__main_window.set_translated_word(
+            translated_word
+        )
         result = self.__check_answer(input_text)
         self.__main_window.set_submitted_word(input_text, result)
         self.__db.update_progress(
@@ -99,7 +105,11 @@ class Main:
         self.__load_new_word()
 
     def __check_answer(self, input_text: str) -> bool:
-        if input_text.lower() == self.__current_word.english.lower():
+        if self.__current_word.article is not None:
+            correct_answer = self.__current_word.article + " " + self.__current_word.deutsch
+        else:
+            correct_answer = self.__current_word.deutsch
+        if input_text.lower() == correct_answer.lower():
             return True
         else:
             return False
