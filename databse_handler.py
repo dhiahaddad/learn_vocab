@@ -18,7 +18,7 @@ class DatabaseHandler:
         self._create_progress_table(table_name)
 
     def insert_df_into_db(self, table_name: str, df: pd.DataFrame) -> None:
-        for row in df.itertuples(index=True):
+        for row in df.itertuples(index=False):
             self._cursor.execute(
                 f"INSERT INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (row),
@@ -144,8 +144,7 @@ class DatabaseHandler:
         self._cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
 
         df_schema = self.__create_sql_schema_from_df(df)
-        schema = f"id INTEGER PRIMARY KEY AUTOINCREMENT,{df_schema}"
-        query = f"CREATE TABLE {table_name} ({schema})"
+        query = f"CREATE TABLE {table_name} ({df_schema})"
         self._cursor.execute(query)
         self._connection.commit()
 
