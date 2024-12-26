@@ -136,7 +136,7 @@ class StatisticsField(QWidget):
         self.value.setText(text)
 
 
-class Statistics(QWidget):
+class StatisticsBox(QWidget):
     def __init__(self, font: QFont, height: int, parent: QWidget):
         super().__init__(parent)
         self._layout = QVBoxLayout(self)

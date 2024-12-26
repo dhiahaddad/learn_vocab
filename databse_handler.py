@@ -10,32 +10,32 @@ from word import MAX_LVL, Word
 class DatabaseHandler:
 
     def __init__(self, db_name: str) -> None:
-        self.__connection = sqlite3.connect(db_name)
-        self.__cursor = self.__connection.cursor()
+        self._connection = sqlite3.connect(db_name)
+        self._cursor = self._connection.cursor()
 
     def initialize_db_by_df(self, table_name: str, df: pd.DataFrame) -> None:
-        self.__create_table_from_df(table_name, df)
-        self.__create_progress_table(table_name)
+        self._create_table_from_df(table_name, df)
+        self._create_progress_table(table_name)
 
     def insert_df_into_db(self, table_name: str, df: pd.DataFrame) -> None:
         for row in df.itertuples(index=True):
-            self.__cursor.execute(
+            self._cursor.execute(
                 f"INSERT INTO {table_name} VALUES (?, ?, ?, ?, ?, ?, ?)",
                 (row),
             )
-            self.__cursor.execute(
+            self._cursor.execute(
                 f"INSERT INTO {table_name}_progress VALUES (?, ?, ?, ?, ?, ?)",
                 (int(row[0]), -1, 0, 0, 0, 0),
             )
-        self.__connection.commit()
+        self._connection.commit()
 
     def reset_progress(self, table_name: str) -> None:
-        self.__cursor.execute(f"UPDATE {table_name}_progress SET learned_lvl = -1")
-        self.__cursor.execute(f"UPDATE {table_name}_progress SET correct_translations = 0")
-        self.__cursor.execute(f"UPDATE {table_name}_progress SET correct_articles = 0")
-        self.__cursor.execute(f"UPDATE {table_name}_progress SET incorrect_translations = 0")
-        self.__cursor.execute(f"UPDATE {table_name}_progress SET incorrect_articles = 0")
-        self.__connection.commit
+        self._cursor.execute(f"UPDATE {table_name}_progress SET learned_lvl = -1")
+        self._cursor.execute(f"UPDATE {table_name}_progress SET correct_translations = 0")
+        self._cursor.execute(f"UPDATE {table_name}_progress SET correct_articles = 0")
+        self._cursor.execute(f"UPDATE {table_name}_progress SET incorrect_translations = 0")
+        self._cursor.execute(f"UPDATE {table_name}_progress SET incorrect_articles = 0")
+        self._connection.commit
 
     def get_random_row(self, table_name: str, words_number: int) -> Tuple:
         MAX_LVL = 5
@@ -46,42 +46,42 @@ class DatabaseHandler:
             f"(SELECT id FROM de_en_vocabulary_progress WHERE learned_lvl < {MAX_LVL} LIMIT {words_number}) "
             "ORDER BY RANDOM() LIMIT 1"
         )
-        self.__cursor.execute(query)
-        return self.__cursor.fetchone()
+        self._cursor.execute(query)
+        return self._cursor.fetchone()
 
     def get_number_of_rows_in_table(self, table_name: str) -> int:
-        self.__cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-        return self.__cursor.fetchone()[0]
+        self._cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+        return self._cursor.fetchone()[0]
 
     def get_number_of_studied_words(self, table_name: str) -> int:
-        self.__cursor.execute(
+        self._cursor.execute(
             f"SELECT COUNT(*) FROM {table_name}_progress "
             "WHERE learned_lvl = -1"
         )
-        return self.__cursor.fetchone()[0]
+        return self._cursor.fetchone()[0]
 
     def get_number_of_words_in_lvl(self, table_name: str, lvl: int) -> int:
-        self.__cursor.execute(
+        self._cursor.execute(
             f"SELECT COUNT(*) FROM {table_name}_progress " f"WHERE learned_lvl = {lvl}"
         )
-        return self.__cursor.fetchone()[0]
+        return self._cursor.fetchone()[0]
 
     def update_rows_number(self, table_name: str) -> None:
-        self.__cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+        self._cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
 
     def table_exists(self, table_name: str) -> bool:
-        self.__cursor.execute(
+        self._cursor.execute(
             "SELECT name FROM sqlite_master " "WHERE type='table' AND name=?",
             (table_name,),
         )
-        return self.__cursor.fetchone() is not None
+        return self._cursor.fetchone() is not None
 
     def get_table_schema(self, table_name: str) -> List[str]:
-        self.__cursor.execute(f"PRAGMA table_info({table_name})")
-        return self.__cursor.fetchall()
+        self._cursor.execute(f"PRAGMA table_info({table_name})")
+        return self._cursor.fetchall()
 
     def set_learned_lvl(self, table_name: str, id: int, lvl: int) -> None:
-        self.__cursor.execute(
+        self._cursor.execute(
             f"UPDATE {table_name}_progress " "SET learned_lvl = ? WHERE id = ?",
             (
                 lvl,
@@ -93,64 +93,64 @@ class DatabaseHandler:
         self, table_name: str, id: int, correct_translation: bool, correct_article: bool
     ) -> None:
         if correct_translation:
-            self.__cursor.execute(
+            self._cursor.execute(
                 f"UPDATE {table_name}_progress "
                 "SET correct_translations = correct_translations + 1 WHERE id = ?",
                 (id,),
             )
         else:
-            self.__cursor.execute(
+            self._cursor.execute(
                 f"UPDATE {table_name}_progress "
                 "SET incorrect_translations = incorrect_translations + 1 WHERE id = ?",
                 (id,),
             )
 
         if correct_article:
-            self.__cursor.execute(
+            self._cursor.execute(
                 f"UPDATE {table_name}_progress "
                 "SET correct_articles = correct_articles + 1 WHERE id = ?",
                 (id,),
             )
         else:
-            self.__cursor.execute(
+            self._cursor.execute(
                 f"UPDATE {table_name}_progress "
                 "SET incorrect_articles = incorrect_articles + 1 WHERE id = ?",
                 (id,),
             )
 
-        self.__connection.commit()
+        self._connection.commit()
 
     def update_learning_lvl(self, table_name: str, word: Word, result: bool) -> None:
         correct = int(word.correct_translations) + int(word.correct_articles) + 2 * int(result)
         incorrect = int(word.incorrect_translations) + int(word.incorrect_articles) + 2 * int(not result)
         lvl = int(MAX_LVL * correct / (correct + incorrect))
-        self.__cursor.execute(
+        self._cursor.execute(
             f"UPDATE {table_name}_progress " "SET learned_lvl = ? WHERE id = ?",
             (
                 lvl,
                 word.id,
             ),
         )
-        self.__connection.commit()
+        self._connection.commit()
 
     def close(self):
-        self.__connection.close()
+        self._connection.close()
 
     def __create_sql_schema_from_df(self, df: pd.DataFrame) -> str:
         schema = ", ".join([f"{col} TEXT" for col in df.columns])
         return schema
 
-    def __create_table_from_df(self, table_name: str, df: pd.DataFrame) -> None:
-        self.__cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+    def _create_table_from_df(self, table_name: str, df: pd.DataFrame) -> None:
+        self._cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
 
         df_schema = self.__create_sql_schema_from_df(df)
         schema = f"id INTEGER PRIMARY KEY AUTOINCREMENT,{df_schema}"
         query = f"CREATE TABLE {table_name} ({schema})"
-        self.__cursor.execute(query)
-        self.__connection.commit()
+        self._cursor.execute(query)
+        self._connection.commit()
 
-    def __create_progress_table(self, table_name: str) -> None:
-        self.__cursor.execute(f"DROP TABLE IF EXISTS {table_name}_progress")
+    def _create_progress_table(self, table_name: str) -> None:
+        self._cursor.execute(f"DROP TABLE IF EXISTS {table_name}_progress")
         schema = """
             id INTEGER PRIMARY KEY,
             learned_lvl TEXT,
@@ -159,5 +159,5 @@ class DatabaseHandler:
             incorrect_translations INTEGER,
             incorrect_articles INTEGER
             """
-        self.__cursor.execute(f"CREATE TABLE {table_name}_progress ({schema})")
-        self.__connection.commit()
+        self._cursor.execute(f"CREATE TABLE {table_name}_progress ({schema})")
+        self._connection.commit()

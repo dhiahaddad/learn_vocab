@@ -1,15 +1,11 @@
-import sys
 import os
 
 from dataclasses import dataclass
-from PyQt5.QtWidgets import QApplication
-
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject
 from csv_reader import CsvReader
 from databse_handler import DatabaseHandler
-from gui import MainWindow
+from progress import Progress
 from word import MAX_LVL, Word
-
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
 @dataclass
@@ -21,124 +17,100 @@ class Config:
     db_name: str
 
 
-class Main:
-    __current_word: Word
+class Worker(QObject):
+    _current_word: Word
+    reset_to_default_started = pyqtSignal()
+    reset_to_default_finished = pyqtSignal()
 
     def __init__(self, config: Config) -> None:
-        self.__config = config
+        super().__init__()
+        self._config = config
 
         # if os.path.exists(config.db_name):
         #     os.remove(config.db_name)
 
-        self.__db = DatabaseHandler(config.db_name)
-        self.__app = QApplication(sys.argv)
-        self.__words_number = 20
-        self.__main_window = MainWindow()
-        self.__main_window.set_words_number(self.__words_number)
+        self._db = DatabaseHandler(config.db_name)
 
-        if not self.__db.table_exists(config.table_name):
-            self.__reset_to_default()
-        elif self.__db.get_random_row(self.__config.table_name, 1) is None:
-            self.__reset_to_default()
+        self.words_number = 20
 
-        self.__db.update_rows_number(self.__config.table_name)
+        if not self._db.table_exists(config.table_name):
+            self.reset_to_default()
+        elif self._db.get_random_row(self._config.table_name, 1) is None:
+            self.reset_to_default()
 
-    def run(self) -> None:
-        self.__main_window.show()
+        self._db.update_rows_number(self._config.table_name)
 
-        self.__main_window.resetDictButtonClicked.connect(self.__reset_to_default)
-        self.__main_window.resetProgressButtonClicked.connect(self.__reset_progress)
-        self.__main_window.submitButtonClicked.connect(self.__on_submitted)
-        self.__main_window.neverReaskButtonClicked.connect(self.__on_never_reask)
+        self.reset_to_default_started.connect(self.reset_to_default)
 
-        self.__load_new_word()
-
-        try:
-            sys.exit(self.__app.exec_())
-        finally:
-            self.__cleanup()
-
-    def __load_new_word(self) -> None:
-        random_word = self.__db.get_random_row(
-            self.__config.table_name, self.__words_number
+    def load_new_word(self) -> str:
+        random_word = self._db.get_random_row(
+            self._config.table_name, self.words_number
         )
-        self.__current_word = Word.from_tuple(random_word)
-        self.__main_window.set_original_word(self.__current_word.english)
-        self.update_statistics()
+        self._current_word = Word.from_tuple(random_word)
+        return self._current_word.english
 
-    def __reset_to_default(self) -> None:
+    @pyqtSlot()
+    def reset_to_default(self) -> None:
         reader = CsvReader()
-        data = reader.read_from_file(config.spreadsheet_url)
-        self.__db.initialize_db_by_df(config.table_name, data)
-        self.__db.insert_df_into_db(config.table_name, data)
-        self.__load_new_word()
+        data = reader.read_from_file(self._config.spreadsheet_url)
+        db = DatabaseHandler(self._config.db_name)
+        db.initialize_db_by_df(self._config.table_name, data)
+        db.insert_df_into_db(self._config.table_name, data)
+        self.reset_to_default_finished.emit()
 
-    def __reset_progress(self) -> None:
-        self.__db.reset_progress(self.__config.table_name)
-        self.update_statistics()
+    def reset_progress(self) -> None:
+        self._db.reset_progress(self._config.table_name)
+        self.get_progress()
 
-    def __on_submitted(self, input_text: str, words_number: int) -> None:
-        self.__words_number = words_number
-        if self.__current_word.article is not None:
-            translated_word = self.__current_word.article + " " + self.__current_word.deutsch
+    def update_progress_in_db(self, result: bool):
+        self._db.update_progress(
+            self._config.table_name, int(self._current_word.id), result, result
+        )
+        self._db.update_learning_lvl(
+            self._config.table_name, self._current_word, result
+        )
+
+    def get_translated_word(self):
+        if self._current_word.article is not None:
+            translated_word = (
+                self._current_word.article + " " + self._current_word.deutsch
+            )
         else:
-            translated_word = self.__current_word.deutsch
-        self.__main_window.set_translated_word(
-            translated_word
-        )
-        result = self.__check_answer(input_text)
-        self.__main_window.set_submitted_word(input_text, result)
-        self.__db.update_progress(
-            self.__config.table_name, int(self.__current_word.id), result, result
-        )
-        self.__db.update_learning_lvl(
-            self.__config.table_name, self.__current_word, result
-        )
-        self.__load_new_word()
+            translated_word = self._current_word.deutsch
+        return translated_word
 
-    def __on_never_reask(self) -> None:
-        self.__db.set_learned_lvl(
-            self.__config.table_name,
-            int(self.__current_word.id),
+    def set_words_number(self, words_number: int):
+        self.words_number = words_number
+
+    def never_reask(self) -> None:
+        self._db.set_learned_lvl(
+            self._config.table_name,
+            int(self._current_word.id),
             MAX_LVL,
         )
-        self.__load_new_word()
 
-    def __check_answer(self, input_text: str) -> bool:
-        if self.__current_word.article is not None:
-            correct_answer = self.__current_word.article + " " + self.__current_word.deutsch
+    def check_answer(self, input_text: str) -> bool:
+        if self._current_word.article is not None:
+            correct_answer = (
+                self._current_word.article + " " + self._current_word.deutsch
+            )
         else:
-            correct_answer = self.__current_word.deutsch
+            correct_answer = self._current_word.deutsch
         if input_text.lower() == correct_answer.lower():
             return True
         else:
             return False
 
-    def update_statistics(self) -> None:
-        words_in_db = self.__db.get_number_of_rows_in_table(self.__config.table_name)
-        studied_words = self.__db.get_number_of_studied_words(self.__config.table_name)
-        current_word_lvl = self.__current_word.learned_lvl
+    def get_progress(self) -> None:
+        words_in_db = self._db.get_number_of_rows_in_table(self._config.table_name)
+        studied_words = self._db.get_number_of_studied_words(self._config.table_name)
+        current_word_lvl = self._current_word.learned_lvl
         words_in_lvl = []
         for i in range(MAX_LVL + 1):
             words_in_lvl.append(
-                self.__db.get_number_of_words_in_lvl(self.__config.table_name, i)
+                self._db.get_number_of_words_in_lvl(self._config.table_name, i)
             )
+        return Progress(words_in_db, studied_words, current_word_lvl, words_in_lvl)
 
-        self.__main_window.set_statistics(
-            words_in_db, studied_words, current_word_lvl, words_in_lvl
-        )
-
-    def __cleanup(self) -> None:
-        self.__db.close()
-
-
-config = Config(
-    spreadsheet_url="https://docs.google.com/spreadsheets/d/e/2PACX-1vRW9I6TdJPrc-ow1rdZO_p3_ApEK-W47aA9IwIipDNxFITxX4KaJUx5KG79MIK-XxkDHoIQNuOt5ybq/pub?gid=0&single=true&output=csv",
-    test_url="https://docs.google.com/spreadsheets/d/e/2PACX-1vTNAXHYCvnJYyVCNdPCF5JQRclv-RzW3oNvYhrHn6_QdgtIGOV3-AvNPeyWSJn7d4jAWNGWDfsUwY9t/pub?gid=0&single=true&output=csv",
-    test_path="test.csv",
-    table_name="de_en_vocabulary",
-    db_name="learn_language.db",
-)
-
-main = Main(config)
-main.run()
+    def cleanup(self) -> None:
+        self._db.close()
