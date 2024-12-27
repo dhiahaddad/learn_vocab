@@ -29,6 +29,8 @@ class MainWindow(QWidget):
         self._set_original_word(new_word)
         progress = self._worker.get_progress()
         self._set_progress(progress)
+        learned_lvl = self._worker.get_current_learned_lvl()
+        self._enable_never_reask_button(learned_lvl)
 
     def _create_ui(self) -> None:
 
@@ -174,6 +176,9 @@ class MainWindow(QWidget):
         new_word = self._worker.load_new_word()
         self._set_original_word(new_word)
 
+        learned_lvl = self._worker.get_current_learned_lvl()
+        self._enable_never_reask_button(learned_lvl)
+
         progress = self._worker.get_progress()
         self._set_progress(progress)
 
@@ -182,13 +187,14 @@ class MainWindow(QWidget):
 
     @pyqtSlot()
     def _never_reask(self) -> None:
-        self._worker.never_reask()
 
-        new_word = self._worker.load_new_word()
-        self._set_original_word(new_word)
+        input_text = self._input_field.text()
+        result = self._worker.check_answer(input_text)
 
-        self._input_field.input_field.clear()
-        self._input_field.input_field.setFocus()
+        if result:
+            self._worker.never_reask()
+
+        self._submit_input()
 
     @pyqtSlot()
     def _reset_dict_button_clicked(self) -> None:
@@ -216,6 +222,8 @@ class MainWindow(QWidget):
         self._input_field.input_field.setEnabled(enable)
         self._words_number.input_field.setEnabled(enable)
 
+    def _enable_never_reask_button(self, learned_lvl: int) -> None:
+        self._never_reask_button.setEnabled(learned_lvl > -1)
 
 app = QApplication(sys.argv)
 main_window = MainWindow()

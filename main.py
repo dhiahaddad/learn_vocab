@@ -38,8 +38,6 @@ class Worker(QObject):
         elif self._db.get_random_row(self._config.table_name, 1) is None:
             self.reset_to_default()
 
-        self._db.update_rows_number(self._config.table_name)
-
         self.reset_to_default_started.connect(self.reset_to_default)
 
     def load_new_word(self) -> str:
@@ -89,6 +87,9 @@ class Worker(QObject):
             MAX_LVL,
         )
 
+    def get_current_learned_lvl(self) -> int:
+        return int(self._current_word.learned_lvl)
+
     def check_answer(self, input_text: str) -> bool:
         if self._current_word.article is not None:
             correct_answer = (
@@ -101,10 +102,10 @@ class Worker(QObject):
         else:
             return False
 
-    def get_progress(self) -> None:
+    def get_progress(self) -> Progress:
         words_in_db = self._db.get_number_of_rows_in_table(self._config.table_name)
         studied_words = self._db.get_number_of_studied_words(self._config.table_name)
-        current_word_lvl = self._current_word.learned_lvl
+        current_word_lvl = int(self._current_word.learned_lvl)
         words_in_lvl = []
         for i in range(MAX_LVL + 1):
             words_in_lvl.append(

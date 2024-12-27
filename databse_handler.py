@@ -56,7 +56,7 @@ class DatabaseHandler:
     def get_number_of_studied_words(self, table_name: str) -> int:
         self._cursor.execute(
             f"SELECT COUNT(*) FROM {table_name}_progress "
-            "WHERE learned_lvl = -1"
+            "WHERE learned_lvl > -1"
         )
         return self._cursor.fetchone()[0]
 
@@ -65,9 +65,6 @@ class DatabaseHandler:
             f"SELECT COUNT(*) FROM {table_name}_progress " f"WHERE learned_lvl = {lvl}"
         )
         return self._cursor.fetchone()[0]
-
-    def update_rows_number(self, table_name: str) -> None:
-        self._cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
 
     def table_exists(self, table_name: str) -> bool:
         self._cursor.execute(
@@ -88,6 +85,7 @@ class DatabaseHandler:
                 id,
             ),
         )
+        self._connection.commit()
 
     def update_progress(
         self, table_name: str, id: int, correct_translation: bool, correct_article: bool

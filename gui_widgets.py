@@ -101,11 +101,11 @@ class GroupBox(QWidget):
     def __init__(self, parent: QWidget):
         super().__init__(parent)
 
-        testVBoxLayout = QVBoxLayout(self)
-        self.setLayout(testVBoxLayout)
+        self.testVBoxLayout = QVBoxLayout(self)
+        self.setLayout(self.testVBoxLayout)
 
     def addWidget(self, widget: QWidget) -> None:
-        self.layout().addWidget(widget)
+        self.testVBoxLayout.addWidget(widget)
 
 
 class StatisticsField(QWidget):
