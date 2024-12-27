@@ -1,3 +1,4 @@
+from typing import List
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
@@ -178,7 +179,7 @@ class StatisticsBox(QWidget):
     def set_current_word_lvl(self, current_word_lvl: int) -> None:        
         self._current_word_lvl.setText(str(current_word_lvl))
     
-    def set_words_in_lvl(self, words_in_lvl: list) -> None:
+    def set_words_in_lvl(self, words_in_lvl: List[int]) -> None:
         self._lvl_0_words.setText(str(words_in_lvl[0]))
         self._lvl_1_words.setText(str(words_in_lvl[1]))
         self._lvl_2_words.setText(str(words_in_lvl[2]))

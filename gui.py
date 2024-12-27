@@ -23,7 +23,7 @@ class MainWindow(QWidget):
         self._start_worker()
         self._update_ui()
 
-    def _update_ui(self):
+    def _update_ui(self) -> None:
         new_word = self._worker.load_new_word()
         self._set_words_number(self._worker.words_number)
         self._set_original_word(new_word)
@@ -162,16 +162,23 @@ class MainWindow(QWidget):
     @pyqtSlot()
     def _submit_input(self) -> None:
         input_text = self._input_field.text()
-        words_number = int(self._words_number.text())
-
-        self._worker.set_words_number(words_number)
 
         result = self._worker.check_answer(input_text)
         self._worker.update_progress_in_db(result)
-        self._set_submitted_word(input_text, result)
+
+        self._update_fields_values()
+
+    def _update_fields_values(self) -> None:
+        input_text = self._input_field.text()
+        words_number = int(self._words_number.text())
+        
+        self._worker.set_words_number(words_number)
 
         translated_word = self._worker.get_translated_word()
         self._set_translated_word(translated_word)
+
+        result = self._worker.check_answer(input_text)
+        self._set_submitted_word(input_text, result)
 
         new_word = self._worker.load_new_word()
         self._set_original_word(new_word)
@@ -194,7 +201,7 @@ class MainWindow(QWidget):
         if result:
             self._worker.never_reask()
 
-        self._submit_input()
+        self._update_fields_values()
 
     @pyqtSlot()
     def _reset_dict_button_clicked(self) -> None:

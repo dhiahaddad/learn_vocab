@@ -23,5 +23,5 @@ class Word:
     def from_tuple(
         cls,
         word: Tuple[str, str, str, str, str, str, str, str, str, str, str, str, str],
-    ):
+    ) -> 'Word':
         return cls(*word)

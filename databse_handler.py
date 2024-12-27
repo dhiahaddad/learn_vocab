@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import sqlite3
 
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 from word import MAX_LVL, Word
 
@@ -37,7 +37,7 @@ class DatabaseHandler:
         self._cursor.execute(f"UPDATE {table_name}_progress SET incorrect_articles = 0")
         self._connection.commit
 
-    def get_random_row(self, table_name: str, words_number: int) -> Tuple:
+    def get_random_row(self, table_name: str, words_number: int) -> Any:
         MAX_LVL = 5
         query = (
             f"SELECT * FROM {table_name} vocab "
@@ -51,20 +51,20 @@ class DatabaseHandler:
 
     def get_number_of_rows_in_table(self, table_name: str) -> int:
         self._cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-        return self._cursor.fetchone()[0]
+        return int(self._cursor.fetchone()[0])
 
     def get_number_of_studied_words(self, table_name: str) -> int:
         self._cursor.execute(
             f"SELECT COUNT(*) FROM {table_name}_progress "
             "WHERE learned_lvl > -1"
         )
-        return self._cursor.fetchone()[0]
+        return int(self._cursor.fetchone()[0])
 
     def get_number_of_words_in_lvl(self, table_name: str, lvl: int) -> int:
         self._cursor.execute(
             f"SELECT COUNT(*) FROM {table_name}_progress " f"WHERE learned_lvl = {lvl}"
         )
-        return self._cursor.fetchone()[0]
+        return int(self._cursor.fetchone()[0])
 
     def table_exists(self, table_name: str) -> bool:
         self._cursor.execute(
@@ -79,7 +79,7 @@ class DatabaseHandler:
 
     def set_learned_lvl(self, table_name: str, id: int, lvl: int) -> None:
         self._cursor.execute(
-            f"UPDATE {table_name}_progress " "SET learned_lvl = ? WHERE id = ?",
+            f"UPDATE {table_name}_progress SET learned_lvl = ? WHERE id = ?",
             (
                 lvl,
                 id,
@@ -123,7 +123,7 @@ class DatabaseHandler:
         incorrect = int(word.incorrect_translations) + int(word.incorrect_articles) + 2 * int(not result)
         lvl = int(MAX_LVL * correct / (correct + incorrect))
         self._cursor.execute(
-            f"UPDATE {table_name}_progress " "SET learned_lvl = ? WHERE id = ?",
+            f"UPDATE {table_name}_progress SET learned_lvl = ? WHERE id = ?",
             (
                 lvl,
                 word.id,
@@ -131,7 +131,7 @@ class DatabaseHandler:
         )
         self._connection.commit()
 
-    def close(self):
+    def close(self) -> None:
         self._connection.close()
 
     def __create_sql_schema_from_df(self, df: pd.DataFrame) -> str:
@@ -150,7 +150,7 @@ class DatabaseHandler:
         self._cursor.execute(f"DROP TABLE IF EXISTS {table_name}_progress")
         schema = """
             id INTEGER PRIMARY KEY,
-            learned_lvl TEXT,
+            learned_lvl INTEGER,
             correct_translations INTEGER,
             correct_articles INTEGER,
             incorrect_translations INTEGER,

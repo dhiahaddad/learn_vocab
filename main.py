@@ -60,7 +60,7 @@ class Worker(QObject):
         self._db.reset_progress(self._config.table_name)
         self.get_progress()
 
-    def update_progress_in_db(self, result: bool):
+    def update_progress_in_db(self, result: bool) -> None:
         self._db.update_progress(
             self._config.table_name, int(self._current_word.id), result, result
         )
@@ -68,7 +68,7 @@ class Worker(QObject):
             self._config.table_name, self._current_word, result
         )
 
-    def get_translated_word(self):
+    def get_translated_word(self) -> str:
         if self._current_word.article is not None:
             translated_word = (
                 self._current_word.article + " " + self._current_word.deutsch
@@ -77,7 +77,7 @@ class Worker(QObject):
             translated_word = self._current_word.deutsch
         return translated_word
 
-    def set_words_number(self, words_number: int):
+    def set_words_number(self, words_number: int) -> None:
         self.words_number = words_number
 
     def never_reask(self) -> None:
